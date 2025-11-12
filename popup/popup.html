@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gaze Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <h1>Gaze</h1>
+      <p class="subtitle">Hands-free scrolling</p>
+    </header>
+
+    <div class="status-section">
+      <div class="status-card" id="status-card">
+        <div class="status-icon" id="status-icon">○</div>
+        <div class="status-info">
+          <div class="status-label">Status</div>
+          <div class="status-value" id="status-value">Inactive</div>
+        </div>
+      </div>
+      <div class="quick-actions">
+        <button class="action-btn" id="toggle-btn">
+          <span id="toggle-text">Start</span>
+        </button>
+        <button class="action-btn secondary" id="recalibrate-btn">
+          Recalibrate
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Settings</h2>
+
+      <div class="setting-group">
+        <label>
+          <span class="setting-label">Max Scroll Speed</span>
+          <span class="setting-value" id="speed-display">800 px/s</span>
+        </label>
+        <input type="range" id="max-speed" min="200" max="1600" value="800" step="50">
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <span class="setting-label">Max Upward Speed</span>
+          <span class="setting-value" id="upward-speed-display">400 px/s</span>
+        </label>
+        <input type="range" id="max-upward-speed" min="100" max="800" value="400" step="50">
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <span class="setting-label">Sensitivity</span>
+          <span class="setting-value" id="sensitivity-display">50</span>
+        </label>
+        <input type="range" id="sensitivity" min="10" max="100" value="50" step="5">
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <span class="setting-label">Upper Zone Threshold</span>
+          <span class="setting-value" id="upper-zone-display">0.30</span>
+        </label>
+        <input type="range" id="upper-zone" min="0.1" max="0.4" value="0.30" step="0.05">
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <span class="setting-label">Lower Zone Threshold</span>
+          <span class="setting-value" id="lower-zone-display">0.70</span>
+        </label>
+        <input type="range" id="lower-zone" min="0.6" max="0.9" value="0.70" step="0.05">
+      </div>
+
+      <div class="setting-group">
+        <label>
+          <span class="setting-label">Confidence Threshold</span>
+          <span class="setting-value" id="confidence-display">0.60</span>
+        </label>
+        <input type="range" id="confidence-threshold" min="0.3" max="0.9" value="0.60" step="0.05">
+      </div>
+
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="show-gaze-dot">
+          <span>Show gaze indicator dot</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <div class="info-card">
+        <h3>How to Use</h3>
+        <ol>
+          <li>Click the extension icon or Start button</li>
+          <li>Complete the calibration by looking at each point</li>
+          <li>Read naturally - the page scrolls based on your gaze</li>
+          <li>Use the floating control to pause or adjust settings</li>
+        </ol>
+      </div>
+
+      <div class="info-card tips">
+        <h3>Tips</h3>
+        <ul>
+          <li>Sit at a comfortable distance from the screen</li>
+          <li>Ensure good lighting on your face</li>
+          <li>Minimize head movement for best results</li>
+          <li>Recalibrate if scrolling feels inaccurate</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer class="popup-footer">
+      <div class="footer-actions">
+        <button class="link-btn" id="reset-btn">Reset Calibration</button>
+        <button class="link-btn" id="reset-settings-btn">Reset Settings</button>
+      </div>
+      <div class="version">v1.0.0</div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
