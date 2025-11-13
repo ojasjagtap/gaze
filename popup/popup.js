@@ -124,16 +124,35 @@ async function saveSettings() {
 async function handleToggle() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+  if (!tab) {
+    console.error('No active tab found');
+    return;
+  }
+
   // Get current state from background
-  const response = await chrome.runtime.sendMessage({ action: 'getState' });
+  const response = await chrome.runtime.sendMessage({
+    action: 'getState',
+    tabId: tab.id
+  });
   const state = response.state || 'inactive';
 
-  if (state === 'inactive') {
-    // Start Gaze
-    chrome.action.onClicked.dispatch(tab);
-  } else {
-    // Stop Gaze
-    chrome.tabs.sendMessage(tab.id, { action: 'stop' });
+  try {
+    if (state === 'inactive') {
+      // Start Gaze
+      await chrome.runtime.sendMessage({
+        action: 'startGaze',
+        tabId: tab.id
+      });
+    } else {
+      // Stop Gaze
+      await chrome.runtime.sendMessage({
+        action: 'stopGaze',
+        tabId: tab.id
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling gaze:', error);
+    alert('Error: ' + error.message + '\n\nMake sure you are on a web page (not chrome:// or extension pages).');
   }
 
   // Update UI after short delay
@@ -144,12 +163,20 @@ async function handleToggle() {
 async function handleRecalibrate() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  // Reset calibration flag
-  currentSettings.hasCalibration = false;
-  await saveSettings();
+  if (!tab) {
+    console.error('No active tab found');
+    return;
+  }
 
-  // Start calibration
-  chrome.tabs.sendMessage(tab.id, { action: 'startCalibration' });
+  try {
+    await chrome.runtime.sendMessage({
+      action: 'recalibrate',
+      tabId: tab.id
+    });
+  } catch (error) {
+    console.error('Error recalibrating:', error);
+    alert('Error: ' + error.message + '\n\nMake sure you are on a web page (not chrome:// or extension pages).');
+  }
 
   // Update UI
   setTimeout(updateUI, 500);
@@ -179,8 +206,15 @@ async function handleResetSettings() {
 async function updateUI() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+  if (!tab) {
+    return;
+  }
+
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'getState' });
+    const response = await chrome.runtime.sendMessage({
+      action: 'getState',
+      tabId: tab.id
+    });
     const state = response.state || 'inactive';
 
     const statusCard = document.getElementById('status-card');

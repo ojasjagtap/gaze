@@ -16,6 +16,11 @@ class GazeEstimator {
 
     return new Promise((resolve, reject) => {
       try {
+        // Check if WebGazer is available
+        if (typeof webgazer === 'undefined') {
+          throw new Error('WebGazer library not loaded');
+        }
+
         // Initialize WebGazer
         webgazer.params.showVideo = false;
         webgazer.params.showFaceOverlay = false;

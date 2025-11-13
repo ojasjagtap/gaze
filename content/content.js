@@ -14,7 +14,13 @@ class GazeController {
   async initialize() {
     // Set up message listener from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      this.handleMessage(message);
+      this.handleMessage(message).then(() => {
+        sendResponse({ success: true });
+      }).catch(error => {
+        console.error('[Gaze] Error handling message:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+      return true; // Keep channel open for async response
     });
 
     // Set up user interaction detection

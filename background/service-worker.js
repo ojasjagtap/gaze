@@ -25,45 +25,12 @@ chrome.runtime.onInstalled.addListener(async () => {
   }
 });
 
-// Handle toolbar icon click
-chrome.action.onClicked.addListener(async (tab) => {
-  const state = tabStates.get(tab.id) || 'inactive';
-  const settings = await chrome.storage.local.get('settings');
-  const hasCalibration = settings.settings?.hasCalibration || false;
+// Note: action.onClicked doesn't fire when default_popup is set in manifest
+// Toolbar interaction is now handled through the popup
 
-  if (state === 'inactive') {
-    // Start gaze tracking
-    if (!hasCalibration) {
-      // Need to calibrate first
-      tabStates.set(tab.id, 'calibrating');
-      updateBadge(tab.id, 'calibrating');
-
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'startCalibration'
-      });
-    } else {
-      // Go directly to active
-      tabStates.set(tab.id, 'active');
-      updateBadge(tab.id, 'active');
-
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'startReading'
-      });
-    }
-  } else {
-    // Stop gaze tracking
-    tabStates.set(tab.id, 'inactive');
-    updateBadge(tab.id, 'inactive');
-
-    chrome.tabs.sendMessage(tab.id, {
-      action: 'stop'
-    });
-  }
-});
-
-// Handle messages from content scripts
+// Handle messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const tabId = sender.tab?.id;
+  const tabId = sender.tab?.id || message.tabId;
 
   if (message.action === 'calibrationComplete') {
     // Calibration finished successfully
@@ -86,6 +53,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateBadge(tabId, 'active');
   } else if (message.action === 'getState') {
     sendResponse({ state: tabStates.get(tabId) || 'inactive' });
+    return true;
+  } else if (message.action === 'startGaze') {
+    // Start from popup
+    handleStartGaze(message.tabId).then(() => {
+      sendResponse({ success: true });
+    }).catch(error => {
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  } else if (message.action === 'stopGaze') {
+    // Stop from popup
+    handleStopGaze(message.tabId).then(() => {
+      sendResponse({ success: true });
+    });
+    return true;
+  } else if (message.action === 'recalibrate') {
+    // Recalibrate from popup
+    handleRecalibrate(message.tabId).then(() => {
+      sendResponse({ success: true });
+    }).catch(error => {
+      sendResponse({ success: false, error: error.message });
+    });
     return true;
   }
 });
@@ -120,6 +109,75 @@ function updateBadge(tabId, state) {
     tabId,
     color: badgeColor[state] || '#666666'
   });
+}
+
+// Handler functions
+async function handleStartGaze(tabId) {
+  const state = tabStates.get(tabId) || 'inactive';
+  const settings = await chrome.storage.local.get('settings');
+  const hasCalibration = settings.settings?.hasCalibration || false;
+
+  // Try to send message to content script
+  try {
+    if (state === 'inactive') {
+      if (!hasCalibration) {
+        // Need to calibrate first
+        tabStates.set(tabId, 'calibrating');
+        updateBadge(tabId, 'calibrating');
+
+        await chrome.tabs.sendMessage(tabId, {
+          action: 'startCalibration'
+        });
+      } else {
+        // Go directly to active
+        tabStates.set(tabId, 'active');
+        updateBadge(tabId, 'active');
+
+        await chrome.tabs.sendMessage(tabId, {
+          action: 'startReading'
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error starting gaze:', error);
+    throw error;
+  }
+}
+
+async function handleStopGaze(tabId) {
+  try {
+    tabStates.set(tabId, 'inactive');
+    updateBadge(tabId, 'inactive');
+
+    await chrome.tabs.sendMessage(tabId, {
+      action: 'stop'
+    });
+  } catch (error) {
+    console.error('Error stopping gaze:', error);
+    // Even if message fails, update state
+    tabStates.set(tabId, 'inactive');
+    updateBadge(tabId, 'inactive');
+  }
+}
+
+async function handleRecalibrate(tabId) {
+  try {
+    // Reset calibration flag
+    const settings = await chrome.storage.local.get('settings');
+    settings.settings.hasCalibration = false;
+    await chrome.storage.local.set({ settings: settings.settings });
+
+    // Start calibration
+    tabStates.set(tabId, 'calibrating');
+    updateBadge(tabId, 'calibrating');
+
+    await chrome.tabs.sendMessage(tabId, {
+      action: 'startCalibration'
+    });
+  } catch (error) {
+    console.error('Error recalibrating:', error);
+    throw error;
+  }
 }
 
 // Reset calibration (can be called from popup)
