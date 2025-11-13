@@ -111,15 +111,68 @@ function updateBadge(tabId, state) {
   });
 }
 
+// Check if content script is loaded
+async function isContentScriptLoaded(tabId) {
+  try {
+    const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+    return response?.pong === true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Inject content scripts programmatically
+async function injectContentScripts(tabId) {
+  try {
+    console.log('[Gaze Background] Injecting content scripts into tab', tabId);
+
+    // Inject CSS first
+    await chrome.scripting.insertCSS({
+      target: { tabId },
+      files: ['content/styles.css']
+    });
+
+    // Inject JavaScript files in order
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: [
+        'lib/webgazer.js',
+        'content/gaze-estimator.js',
+        'content/fixation-detector.js',
+        'content/scroll-controller.js',
+        'content/calibration.js',
+        'content/floating-control.js',
+        'content/content.js'
+      ]
+    });
+
+    console.log('[Gaze Background] Content scripts injected successfully');
+
+    // Wait a moment for scripts to initialize
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    return true;
+  } catch (error) {
+    console.error('[Gaze Background] Error injecting content scripts:', error);
+    throw new Error('Failed to inject content scripts. Make sure you are on a regular web page (not chrome://, about:, or file:// pages).');
+  }
+}
+
 // Handler functions
 async function handleStartGaze(tabId) {
   const state = tabStates.get(tabId) || 'inactive';
   const settings = await chrome.storage.local.get('settings');
   const hasCalibration = settings.settings?.hasCalibration || false;
 
-  // Try to send message to content script
   try {
     if (state === 'inactive') {
+      // Check if content script is loaded, inject if not
+      const isLoaded = await isContentScriptLoaded(tabId);
+      if (!isLoaded) {
+        console.log('[Gaze Background] Content script not loaded, injecting...');
+        await injectContentScripts(tabId);
+      }
+
       if (!hasCalibration) {
         // Need to calibrate first
         tabStates.set(tabId, 'calibrating');
@@ -140,6 +193,9 @@ async function handleStartGaze(tabId) {
     }
   } catch (error) {
     console.error('Error starting gaze:', error);
+    // Reset state on error
+    tabStates.set(tabId, 'inactive');
+    updateBadge(tabId, 'inactive');
     throw error;
   }
 }
@@ -162,6 +218,13 @@ async function handleStopGaze(tabId) {
 
 async function handleRecalibrate(tabId) {
   try {
+    // Check if content script is loaded, inject if not
+    const isLoaded = await isContentScriptLoaded(tabId);
+    if (!isLoaded) {
+      console.log('[Gaze Background] Content script not loaded, injecting...');
+      await injectContentScripts(tabId);
+    }
+
     // Reset calibration flag
     const settings = await chrome.storage.local.get('settings');
     settings.settings.hasCalibration = false;
@@ -176,6 +239,9 @@ async function handleRecalibrate(tabId) {
     });
   } catch (error) {
     console.error('Error recalibrating:', error);
+    // Reset state on error
+    tabStates.set(tabId, 'inactive');
+    updateBadge(tabId, 'inactive');
     throw error;
   }
 }

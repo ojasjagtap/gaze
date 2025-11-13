@@ -14,8 +14,12 @@ class GazeController {
   async initialize() {
     // Set up message listener from background
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      this.handleMessage(message).then(() => {
-        sendResponse({ success: true });
+      this.handleMessage(message).then((result) => {
+        if (result) {
+          sendResponse(result);
+        } else {
+          sendResponse({ success: true });
+        }
       }).catch(error => {
         console.error('[Gaze] Error handling message:', error);
         sendResponse({ success: false, error: error.message });
@@ -33,6 +37,10 @@ class GazeController {
     console.log('[Gaze] Received message:', message.action);
 
     switch (message.action) {
+      case 'ping':
+        // Respond to ping check
+        return { pong: true };
+
       case 'startCalibration':
         await this.startCalibration();
         break;
@@ -53,6 +61,8 @@ class GazeController {
         this.resume();
         break;
     }
+
+    return null;
   }
 
   async startCalibration() {
