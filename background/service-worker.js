@@ -1,15 +1,35 @@
-// Background service worker for Gaze extension
-// Manages per-tab state and toolbar interactions
+/**
+ * Background service worker for Gaze extension
+ * Manages per-tab state and toolbar interactions
+ */
 
-// Tab states: inactive, calibrating, active, paused
+// Constants
+const TAB_STATES = {
+  INACTIVE: 'inactive',
+  CALIBRATING: 'calibrating',
+  ACTIVE: 'active',
+  PAUSED: 'paused'
+};
+
+const BADGE_CONFIG = {
+  [TAB_STATES.INACTIVE]: { text: '', color: '#666666' },
+  [TAB_STATES.CALIBRATING]: { text: 'CAL', color: '#FFA500' },
+  [TAB_STATES.ACTIVE]: { text: 'ON', color: '#00AA00' },
+  [TAB_STATES.PAUSED]: { text: '||', color: '#FFAA00' }
+};
+
+const SCRIPT_INJECTION_DELAY = 500; // ms - wait for scripts to initialize
+const PING_TIMEOUT = 1000; // ms - timeout for content script ping
+
+// Tab states tracking
 const tabStates = new Map();
 
-// Default settings
+// Default settings - single source of truth
 const DEFAULT_SETTINGS = {
   maxScrollSpeed: 800, // px/s
   maxUpwardSpeed: 400, // px/s
   sensitivity: 50, // 0-100
-  showGazeDot: false,
+  showGazeDot: true,
   upperZoneThreshold: 0.30,
   lowerZoneThreshold: 0.70,
   fixationWindow: 250, // ms
@@ -17,101 +37,109 @@ const DEFAULT_SETTINGS = {
   hasCalibration: false
 };
 
-// Initialize settings
+/**
+ * Initialize settings on extension installation
+ */
 chrome.runtime.onInstalled.addListener(async () => {
-  const settings = await chrome.storage.local.get('settings');
-  if (!settings.settings) {
+  const { settings } = await chrome.storage.local.get('settings');
+  if (!settings) {
     await chrome.storage.local.set({ settings: DEFAULT_SETTINGS });
   }
 });
 
-// Note: action.onClicked doesn't fire when default_popup is set in manifest
-// Toolbar interaction is now handled through the popup
-
-// Handle messages from content scripts and popup
+/**
+ * Handle messages from content scripts and popup - consolidated listener
+ */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id || message.tabId;
 
-  if (message.action === 'calibrationComplete') {
-    // Calibration finished successfully
-    chrome.storage.local.get('settings').then(({ settings }) => {
-      settings.hasCalibration = true;
-      chrome.storage.local.set({ settings });
+  switch (message.action) {
+    case 'calibrationComplete':
+      handleCalibrationComplete(tabId).then(() => sendResponse({ success: true }));
+      return true;
 
-      tabStates.set(tabId, 'active');
-      updateBadge(tabId, 'active');
+    case 'calibrationFailed':
+      handleCalibrationFailed(tabId, message.reason);
+      sendResponse({ success: true });
+      return true;
 
-      chrome.tabs.sendMessage(tabId, {
-        action: 'startReading'
-      });
-    });
-  } else if (message.action === 'pause') {
-    tabStates.set(tabId, 'paused');
-    updateBadge(tabId, 'paused');
-  } else if (message.action === 'resume') {
-    tabStates.set(tabId, 'active');
-    updateBadge(tabId, 'active');
-  } else if (message.action === 'getState') {
-    sendResponse({ state: tabStates.get(tabId) || 'inactive' });
-    return true;
-  } else if (message.action === 'startGaze') {
-    // Start from popup
-    handleStartGaze(message.tabId).then(() => {
+    case 'pause':
+      tabStates.set(tabId, TAB_STATES.PAUSED);
+      updateBadge(tabId, TAB_STATES.PAUSED);
       sendResponse({ success: true });
-    }).catch(error => {
-      sendResponse({ success: false, error: error.message });
-    });
-    return true;
-  } else if (message.action === 'stopGaze') {
-    // Stop from popup
-    handleStopGaze(message.tabId).then(() => {
+      return true;
+
+    case 'resume':
+      tabStates.set(tabId, TAB_STATES.ACTIVE);
+      updateBadge(tabId, TAB_STATES.ACTIVE);
       sendResponse({ success: true });
-    });
-    return true;
-  } else if (message.action === 'recalibrate') {
-    // Recalibrate from popup
-    handleRecalibrate(message.tabId).then(() => {
-      sendResponse({ success: true });
-    }).catch(error => {
-      sendResponse({ success: false, error: error.message });
-    });
-    return true;
+      return true;
+
+    case 'getState':
+      sendResponse({ state: tabStates.get(tabId) || TAB_STATES.INACTIVE });
+      return true;
+
+    case 'startGaze':
+      handleStartGaze(message.tabId)
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+
+    case 'stopGaze':
+      handleStopGaze(message.tabId)
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+
+    case 'recalibrate':
+      handleRecalibrate(message.tabId)
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+
+    case 'resetCalibration':
+      handleResetCalibration()
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+
+    default:
+      sendResponse({ success: false, error: 'Unknown action' });
+      return false;
   }
 });
 
-// Clean up state when tab is closed
+/**
+ * Clean up state when tab is closed
+ */
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabStates.delete(tabId);
 });
 
-// Update badge to show state
+/**
+ * Update extension badge to show current state
+ * @param {number} tabId - The tab ID
+ * @param {string} state - The current state (from TAB_STATES)
+ */
 function updateBadge(tabId, state) {
-  const badgeText = {
-    'inactive': '',
-    'calibrating': 'CAL',
-    'active': 'ON',
-    'paused': '||'
-  };
-
-  const badgeColor = {
-    'inactive': '#666666',
-    'calibrating': '#FFA500',
-    'active': '#00AA00',
-    'paused': '#FFAA00'
-  };
+  const config = BADGE_CONFIG[state] || BADGE_CONFIG[TAB_STATES.INACTIVE];
 
   chrome.action.setBadgeText({
     tabId,
-    text: badgeText[state] || ''
+    text: config.text
   });
 
   chrome.action.setBadgeBackgroundColor({
     tabId,
-    color: badgeColor[state] || '#666666'
+    color: config.color
   });
 }
 
-// Check if content script is loaded
+/**
+ * Check if content script is already loaded in the tab
+ * @param {number} tabId - The tab ID to check
+ * @returns {Promise<boolean>} True if content script is loaded
+ */
 async function isContentScriptLoaded(tabId) {
   try {
     const response = await chrome.tabs.sendMessage(tabId, { action: 'ping' });
@@ -121,11 +149,13 @@ async function isContentScriptLoaded(tabId) {
   }
 }
 
-// Inject content scripts programmatically
+/**
+ * Inject content scripts programmatically into a tab
+ * @param {number} tabId - The tab ID to inject scripts into
+ * @throws {Error} If injection fails
+ */
 async function injectContentScripts(tabId) {
   try {
-    console.log('[Gaze Background] Injecting content scripts into tab', tabId);
-
     // Inject CSS first
     await chrome.scripting.insertCSS({
       target: { tabId },
@@ -145,45 +175,82 @@ async function injectContentScripts(tabId) {
       ]
     });
 
-    console.log('[Gaze Background] Content scripts injected successfully');
-
-    // Wait a moment for scripts to initialize
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for scripts to initialize
+    await new Promise(resolve => setTimeout(resolve, SCRIPT_INJECTION_DELAY));
 
     return true;
   } catch (error) {
-    console.error('[Gaze Background] Error injecting content scripts:', error);
+    console.error('[Gaze] Error injecting content scripts:', error);
     throw new Error('Failed to inject content scripts. Make sure you are on a regular web page (not chrome://, about:, or file:// pages).');
   }
 }
 
-// Handler functions
+/**
+ * Handle calibration completion
+ * @param {number} tabId - The tab ID
+ */
+async function handleCalibrationComplete(tabId) {
+  try {
+    const { settings } = await chrome.storage.local.get('settings');
+    settings.hasCalibration = true;
+    await chrome.storage.local.set({ settings });
+
+    tabStates.set(tabId, TAB_STATES.ACTIVE);
+    updateBadge(tabId, TAB_STATES.ACTIVE);
+
+    await chrome.tabs.sendMessage(tabId, {
+      action: 'startReading'
+    });
+  } catch (error) {
+    console.error('[Gaze] Error handling calibration complete:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle calibration failure
+ * @param {number} tabId - The tab ID
+ * @param {string} reason - Reason for failure
+ */
+function handleCalibrationFailed(tabId, reason) {
+  tabStates.set(tabId, TAB_STATES.INACTIVE);
+  updateBadge(tabId, TAB_STATES.INACTIVE);
+
+  // Attempt to show popup for user feedback
+  chrome.action.openPopup().catch(() => {
+    console.error('[Gaze] Camera access denied:', reason);
+  });
+}
+
+/**
+ * Start gaze tracking for a tab
+ * @param {number} tabId - The tab ID
+ */
 async function handleStartGaze(tabId) {
-  const state = tabStates.get(tabId) || 'inactive';
-  const settings = await chrome.storage.local.get('settings');
-  const hasCalibration = settings.settings?.hasCalibration || false;
+  const state = tabStates.get(tabId) || TAB_STATES.INACTIVE;
+  const { settings } = await chrome.storage.local.get('settings');
+  const hasCalibration = settings?.hasCalibration || false;
 
   try {
-    if (state === 'inactive') {
+    if (state === TAB_STATES.INACTIVE) {
       // Check if content script is loaded, inject if not
       const isLoaded = await isContentScriptLoaded(tabId);
       if (!isLoaded) {
-        console.log('[Gaze Background] Content script not loaded, injecting...');
         await injectContentScripts(tabId);
       }
 
       if (!hasCalibration) {
         // Need to calibrate first
-        tabStates.set(tabId, 'calibrating');
-        updateBadge(tabId, 'calibrating');
+        tabStates.set(tabId, TAB_STATES.CALIBRATING);
+        updateBadge(tabId, TAB_STATES.CALIBRATING);
 
         await chrome.tabs.sendMessage(tabId, {
           action: 'startCalibration'
         });
       } else {
         // Go directly to active
-        tabStates.set(tabId, 'active');
-        updateBadge(tabId, 'active');
+        tabStates.set(tabId, TAB_STATES.ACTIVE);
+        updateBadge(tabId, TAB_STATES.ACTIVE);
 
         await chrome.tabs.sendMessage(tabId, {
           action: 'startReading'
@@ -191,68 +258,77 @@ async function handleStartGaze(tabId) {
       }
     }
   } catch (error) {
-    console.error('Error starting gaze:', error);
+    console.error('[Gaze] Error starting gaze:', error);
     // Reset state on error
-    tabStates.set(tabId, 'inactive');
-    updateBadge(tabId, 'inactive');
+    tabStates.set(tabId, TAB_STATES.INACTIVE);
+    updateBadge(tabId, TAB_STATES.INACTIVE);
     throw error;
   }
 }
 
+/**
+ * Stop gaze tracking for a tab
+ * @param {number} tabId - The tab ID
+ */
 async function handleStopGaze(tabId) {
   try {
-    tabStates.set(tabId, 'inactive');
-    updateBadge(tabId, 'inactive');
+    tabStates.set(tabId, TAB_STATES.INACTIVE);
+    updateBadge(tabId, TAB_STATES.INACTIVE);
 
     await chrome.tabs.sendMessage(tabId, {
       action: 'stop'
     });
   } catch (error) {
-    console.error('Error stopping gaze:', error);
+    console.error('[Gaze] Error stopping gaze:', error);
     // Even if message fails, update state
-    tabStates.set(tabId, 'inactive');
-    updateBadge(tabId, 'inactive');
+    tabStates.set(tabId, TAB_STATES.INACTIVE);
+    updateBadge(tabId, TAB_STATES.INACTIVE);
   }
 }
 
+/**
+ * Recalibrate gaze tracking for a tab
+ * @param {number} tabId - The tab ID
+ */
 async function handleRecalibrate(tabId) {
   try {
     // Check if content script is loaded, inject if not
     const isLoaded = await isContentScriptLoaded(tabId);
     if (!isLoaded) {
-      console.log('[Gaze Background] Content script not loaded, injecting...');
       await injectContentScripts(tabId);
     }
 
     // Reset calibration flag
-    const settings = await chrome.storage.local.get('settings');
-    settings.settings.hasCalibration = false;
-    await chrome.storage.local.set({ settings: settings.settings });
+    const { settings } = await chrome.storage.local.get('settings');
+    settings.hasCalibration = false;
+    await chrome.storage.local.set({ settings });
 
     // Start calibration
-    tabStates.set(tabId, 'calibrating');
-    updateBadge(tabId, 'calibrating');
+    tabStates.set(tabId, TAB_STATES.CALIBRATING);
+    updateBadge(tabId, TAB_STATES.CALIBRATING);
 
     await chrome.tabs.sendMessage(tabId, {
       action: 'startCalibration'
     });
   } catch (error) {
-    console.error('Error recalibrating:', error);
+    console.error('[Gaze] Error recalibrating:', error);
     // Reset state on error
-    tabStates.set(tabId, 'inactive');
-    updateBadge(tabId, 'inactive');
+    tabStates.set(tabId, TAB_STATES.INACTIVE);
+    updateBadge(tabId, TAB_STATES.INACTIVE);
     throw error;
   }
 }
 
-// Reset calibration (can be called from popup)
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'resetCalibration') {
-    chrome.storage.local.get('settings').then(({ settings }) => {
-      settings.hasCalibration = false;
-      chrome.storage.local.set({ settings });
-      sendResponse({ success: true });
-    });
-    return true;
+/**
+ * Reset calibration data
+ */
+async function handleResetCalibration() {
+  try {
+    const { settings } = await chrome.storage.local.get('settings');
+    settings.hasCalibration = false;
+    await chrome.storage.local.set({ settings });
+  } catch (error) {
+    console.error('[Gaze] Error resetting calibration:', error);
+    throw error;
   }
-});
+}

@@ -1,18 +1,31 @@
 {
-  "name": "gaze",
+  "name": "gaze-chrome-extension",
   "version": "1.0.0",
-  "description": "",
+  "description": "Hands-free scrolling Chrome extension using eye tracking",
   "main": "create_icons.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-icons": "node create_icons.js && node convert_icons.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "chrome-extension",
+    "eye-tracking",
+    "gaze-tracking",
+    "accessibility",
+    "hands-free",
+    "webgazer",
+    "auto-scroll"
+  ],
+  "author": "Gaze Extension Team",
+  "license": "MIT",
   "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/gaze.git"
+  },
   "dependencies": {
     "sharp": "^0.34.5"
   }

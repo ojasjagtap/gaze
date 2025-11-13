@@ -7,12 +7,12 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(20, 20, 30, 0.95);
+  background: rgba(0, 0, 0, 0.9);
   z-index: 999999;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .calibration-content {
@@ -25,87 +25,99 @@
 }
 
 .calibration-header h2 {
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 400;
   margin: 0 0 12px 0;
+  color: #ffffff;
 }
 
 .calibration-header p {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0 0 24px 0;
 }
 
 .calibration-progress {
-  max-width: 400px;
+  max-width: 300px;
   margin: 0 auto;
 }
 
 .progress-text {
   display: block;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 10px;
 }
 
 .progress-bar {
   width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 1px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  background: rgba(255, 255, 255, 0.5);
   transition: width 0.3s ease;
   width: 0%;
 }
 
 .calibration-target {
   position: fixed;
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   transform: translate(-50%, -50%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.2s ease;
 }
 
-.target-outer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 80px;
-  height: 80px;
-  border: 3px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-}
-
-.target-inner {
+.target-crosshair-h {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 20px;
-  height: 20px;
-  background: #4CAF50;
+  width: 24px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translate(-50%, -50%);
+}
+
+.target-crosshair-v {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translate(-50%, -50%);
+}
+
+.target-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
 }
 
 .target-progress {
   position: absolute;
   top: 0;
   left: 0;
+  width: 60px;
+  height: 60px;
 }
 
 .progress-ring {
   fill: none;
-  stroke: #4CAF50;
-  stroke-width: 3;
-  stroke-dasharray: 220 220;
-  stroke-dashoffset: 220;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 2;
+  stroke-dasharray: 177 177;
+  stroke-dashoffset: 177;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
   transition: stroke-dashoffset 0.05s linear;
@@ -115,34 +127,19 @@
   padding: 40px;
 }
 
-.success-icon {
-  font-size: 72px;
-  color: #4CAF50;
-  margin-bottom: 20px;
-}
-
 .calibration-complete h2 {
-  font-size: 28px;
+  font-size: 24px;
+  font-weight: 400;
   margin-bottom: 12px;
+  color: #ffffff;
 }
 
 .calibration-complete p {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* Gaze Dot */
-#gaze-dot {
-  position: fixed;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(255, 100, 100, 0.7);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  pointer-events: none;
-  z-index: 999999;
-  transition: transform 0.05s ease-out;
-}
+/* Gaze Dot - styles are now applied inline to avoid conflicts */
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

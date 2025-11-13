@@ -1,17 +1,43 @@
-// Fixation Detector Module
-// Detects stable gaze fixations using dispersion-based algorithm
+/**
+ * Fixation Detector Module
+ * Detects stable gaze fixations using dispersion-based algorithm
+ */
 
+// Constants
+const DEFAULT_WINDOW_SIZE = 250; // ms - time window for fixation detection
+const DEFAULT_DISPERSION_THRESHOLD = 50; // px - maximum dispersion for fixation
+const DEFAULT_CONFIDENCE_THRESHOLD = 0.6; // minimum confidence for valid fixation
+const MIN_SAMPLES_FOR_FIXATION = 3; // minimum number of samples required
+
+/**
+ * Detects when user is fixating on a specific point
+ * Uses dispersion-based algorithm to identify stable gaze
+ */
 class FixationDetector {
+  /**
+   * @param {Object} options - Configuration options
+   * @param {number} options.windowSize - Time window in ms for fixation detection
+   * @param {number} options.dispersionThreshold - Maximum dispersion in pixels
+   * @param {number} options.confidenceThreshold - Minimum confidence threshold
+   */
   constructor(options = {}) {
-    this.windowSize = options.windowSize || 250; // ms
-    this.dispersionThreshold = options.dispersionThreshold || 50; // pixels
-    this.confidenceThreshold = options.confidenceThreshold || 0.6;
+    this.windowSize = options.windowSize || DEFAULT_WINDOW_SIZE;
+    this.dispersionThreshold = options.dispersionThreshold || DEFAULT_DISPERSION_THRESHOLD;
+    this.confidenceThreshold = options.confidenceThreshold || DEFAULT_CONFIDENCE_THRESHOLD;
 
     this.gazeBuffer = [];
     this.currentFixation = null;
     this.isFixating = false;
   }
 
+  /**
+   * Update fixation detector with new gaze prediction
+   * @param {Object} gazePrediction - Gaze prediction data
+   * @param {number} gazePrediction.x - X coordinate
+   * @param {number} gazePrediction.y - Y coordinate
+   * @param {number} gazePrediction.confidence - Confidence score
+   * @returns {Object} Fixation result
+   */
   update(gazePrediction) {
     const now = Date.now();
 
@@ -27,7 +53,7 @@ class FixationDetector {
     );
 
     // Check if we have enough samples and confidence
-    if (this.gazeBuffer.length < 3) {
+    if (this.gazeBuffer.length < MIN_SAMPLES_FOR_FIXATION) {
       this.isFixating = false;
       this.currentFixation = null;
       return { isFixating: false };
@@ -73,6 +99,10 @@ class FixationDetector {
     }
   }
 
+  /**
+   * Calculate dispersion and centroid of gaze buffer
+   * @returns {Object} Dispersion and centroid data
+   */
   calculateDispersion() {
     const n = this.gazeBuffer.length;
 
@@ -90,20 +120,35 @@ class FixationDetector {
     return { dispersionX, dispersionY, centroidX, centroidY };
   }
 
+  /**
+   * Reset the fixation detector
+   */
   reset() {
     this.gazeBuffer = [];
     this.currentFixation = null;
     this.isFixating = false;
   }
 
+  /**
+   * Get current fixation data
+   * @returns {Object|null} Current fixation or null
+   */
   getFixation() {
     return this.currentFixation;
   }
 
+  /**
+   * Check if currently fixating
+   * @returns {boolean} True if fixating
+   */
   isCurrentlyFixating() {
     return this.isFixating;
   }
 
+  /**
+   * Update settings
+   * @param {Object} settings - New settings
+   */
   updateSettings(settings) {
     if (settings.fixationWindow !== undefined) {
       this.windowSize = settings.fixationWindow;

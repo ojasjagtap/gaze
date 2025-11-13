@@ -15,7 +15,7 @@
 
     <div class="status-section">
       <div class="status-card" id="status-card">
-        <div class="status-icon" id="status-icon">○</div>
+        <div class="status-icon" id="status-icon"></div>
         <div class="status-info">
           <div class="status-label">Status</div>
           <div class="status-value" id="status-value">Inactive</div>
@@ -82,10 +82,13 @@
         <input type="range" id="confidence-threshold" min="0.3" max="0.9" value="0.60" step="0.05">
       </div>
 
-      <div class="checkbox-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="show-gaze-dot">
-          <span>Show gaze indicator dot</span>
+      <div class="toggle-group">
+        <label class="toggle-label">
+          <span class="toggle-text">Show gaze indicator dot</span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="show-gaze-dot">
+            <span class="toggle-slider"></span>
+          </div>
         </label>
       </div>
     </div>
