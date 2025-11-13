@@ -12,20 +12,6 @@ Gaze is a Chrome extension that enables hands-free scrolling based on eye tracki
 - **Floating Controls**: In-page control panel for pause/resume and adjustments
 - **Automatic Hold**: Pauses scrolling when you type or interact with the page
 
-## Installation
-
-### Method 1: Load Unpacked Extension (Development)
-
-1. Download or clone this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" using the toggle in the top right
-4. Click "Load unpacked"
-5. Select the `gaze` folder
-
-### Method 2: Install from Chrome Web Store (Coming Soon)
-
-_Will be available once published_
-
 ## Usage
 
 ### Getting Started
