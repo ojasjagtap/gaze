@@ -5,6 +5,7 @@ class GazeController {
   constructor() {
     this.isActive = false;
     this.state = 'inactive';
+    this.gazeDot = null;
 
     // User interaction detection
     this.lastInteractionTime = 0;
@@ -97,8 +98,10 @@ class GazeController {
     // Start scroll controller
     window.scrollController.start();
 
-    // Create floating control UI
-    await window.floatingControl.create();
+    // Create gaze dot if enabled
+    if (settings.showGazeDot) {
+      this.createGazeDot();
+    }
 
     // Start main loop
     this.startMainLoop();
@@ -113,20 +116,28 @@ class GazeController {
       // Update scroll controller
       window.scrollController.updateFromGaze(fixationResult);
 
-      // Update floating control status
-      window.floatingControl.updateStatus(
-        fixationResult.isFixating ? 'active' : 'low_confidence',
-        gazePrediction.confidence
-      );
-
       // Update gaze dot if enabled
-      if (window.floatingControl.settings?.showGazeDot) {
-        window.floatingControl.updateGazeDot(gazePrediction.x, gazePrediction.y);
+      if (this.gazeDot) {
+        this.updateGazeDot(gazePrediction.x, gazePrediction.y);
       }
+    });
 
-      // Update stats (for debugging)
-      const stats = window.scrollController.getStats();
-      window.floatingControl.updateStats(stats);
+    // Listen for settings changes
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'local' && changes.settings) {
+        const newSettings = changes.settings.newValue;
+
+        // Update gaze dot visibility
+        if (newSettings.showGazeDot && !this.gazeDot) {
+          this.createGazeDot();
+        } else if (!newSettings.showGazeDot && this.gazeDot) {
+          this.removeGazeDot();
+        }
+
+        // Update other settings
+        window.fixationDetector.updateSettings(newSettings);
+        window.scrollController.updateSettings(newSettings);
+      }
     });
   }
 
@@ -150,8 +161,45 @@ class GazeController {
     window.gazeEstimator.stop();
     window.fixationDetector.reset();
 
-    // Remove UI
-    window.floatingControl.remove();
+    // Remove gaze dot
+    this.removeGazeDot();
+  }
+
+  createGazeDot() {
+    if (this.gazeDot) return;
+
+    this.gazeDot = document.createElement('div');
+    this.gazeDot.id = 'gaze-dot';
+    this.gazeDot.style.cssText = `
+      position: fixed;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 100, 100, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      pointer-events: none;
+      z-index: 999999;
+      display: none;
+      transition: transform 0.05s ease-out;
+    `;
+    document.body.appendChild(this.gazeDot);
+    console.log('[Gaze] Gaze dot created');
+  }
+
+  updateGazeDot(x, y) {
+    if (!this.gazeDot) return;
+
+    this.gazeDot.style.display = 'block';
+    this.gazeDot.style.left = `${x - 6}px`;
+    this.gazeDot.style.top = `${y - 6}px`;
+  }
+
+  removeGazeDot() {
+    if (this.gazeDot && this.gazeDot.parentNode) {
+      this.gazeDot.parentNode.removeChild(this.gazeDot);
+      this.gazeDot = null;
+      console.log('[Gaze] Gaze dot removed');
+    }
   }
 
   setupInteractionDetection() {
@@ -225,13 +273,5 @@ class GazeController {
 // Initialize Gaze controller
 const gazeController = new GazeController();
 gazeController.initialize();
-
-// Keyboard shortcut for stats toggle (for debugging)
-document.addEventListener('keydown', (e) => {
-  // Ctrl+Shift+G to toggle stats
-  if (e.ctrlKey && e.shiftKey && e.key === 'G') {
-    window.floatingControl.toggleStats();
-  }
-});
 
 console.log('[Gaze] Content script loaded');

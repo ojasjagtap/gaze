@@ -130,20 +130,33 @@ class ScrollController {
   calculateVelocity(normalizedY) {
     const { upperZoneThreshold, lowerZoneThreshold, maxScrollSpeed, maxUpwardSpeed, sensitivity } = this.settings;
 
-    // Adjust viewport bounds to ignore sticky header/footer (10% margins)
-    const stickyMargin = 0.10;
-    const adjustedY = (normalizedY - stickyMargin) / (1 - 2 * stickyMargin);
-
-    // Check zones
-    if (adjustedY < upperZoneThreshold) {
+    // Check zones directly without sticky margin adjustment
+    // This makes the zones more predictable and easier to calibrate
+    if (normalizedY < upperZoneThreshold) {
       // Upper zone - scroll up
-      const distance = (upperZoneThreshold - adjustedY) / upperZoneThreshold;
-      const rawVelocity = -distance * maxUpwardSpeed;
+      // Distance from top of screen (0) to current position
+      const distanceFromTop = normalizedY;
+      // Distance within upper zone (how far into the zone we are)
+      const zoneDistance = (upperZoneThreshold - normalizedY) / upperZoneThreshold;
+
+      // Use a power curve for more natural feeling
+      // Closer to top = faster scrolling
+      const powerCurve = Math.pow(zoneDistance, 0.8);
+      const rawVelocity = -powerCurve * maxUpwardSpeed;
+
       return rawVelocity * (sensitivity / 50); // Apply sensitivity
-    } else if (adjustedY > lowerZoneThreshold) {
+    } else if (normalizedY > lowerZoneThreshold) {
       // Lower zone - scroll down
-      const distance = (adjustedY - lowerZoneThreshold) / (1 - lowerZoneThreshold);
-      const rawVelocity = distance * maxScrollSpeed;
+      // Distance from current position to bottom (1)
+      const distanceFromBottom = 1 - normalizedY;
+      // Distance within lower zone (how far into the zone we are)
+      const zoneDistance = (normalizedY - lowerZoneThreshold) / (1 - lowerZoneThreshold);
+
+      // Use a power curve for more natural feeling
+      // Closer to bottom = faster scrolling
+      const powerCurve = Math.pow(zoneDistance, 0.8);
+      const rawVelocity = powerCurve * maxScrollSpeed;
+
       return rawVelocity * (sensitivity / 50); // Apply sensitivity
     } else {
       // Middle zone - idle

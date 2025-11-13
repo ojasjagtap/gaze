@@ -141,7 +141,6 @@ async function injectContentScripts(tabId) {
         'content/fixation-detector.js',
         'content/scroll-controller.js',
         'content/calibration.js',
-        'content/floating-control.js',
         'content/content.js'
       ]
     });
