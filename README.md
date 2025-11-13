@@ -25,24 +25,6 @@ Gaze is a Chrome extension that enables hands-free scrolling based on eye tracki
 
 ### Controls
 
-#### Toolbar Icon
-- Click to toggle Gaze on/off for the current tab
-- Badge shows current status:
-  - `ON` - Active and scrolling
-  - `CAL` - Calibrating
-  - `||` - Paused
-  - No badge - Inactive
-
-#### Floating Control Panel
-When Gaze is active, a floating control appears in the bottom-right corner:
-
-- **Status Indicator**: Shows whether tracking is active (green), paused (orange), or low confidence (red)
-- **Pause/Resume Button**: Quickly pause and resume scrolling
-- **Speed Slider**: Adjust maximum scroll speed (200-1600 px/s)
-- **Sensitivity Slider**: Adjust how strongly gaze position affects velocity (10-100)
-- **Show Gaze Dot**: Toggle visual indicator of where you're looking
-- **Close Button**: Stop Gaze for the current tab
-
 #### Popup Settings
 Click the extension icon to open detailed settings:
 
@@ -169,27 +151,6 @@ icons/
 
 ## Development
 
-### Build from Source
-
-```bash
-# Clone repository
-git clone https://github.com/yourusername/gaze.git
-cd gaze
-
-# Install dependencies (for icon generation)
-npm install
-
-# Generate icons (if needed)
-node create_icons.js
-node convert_icons.js
-
-# Load in Chrome
-# 1. Navigate to chrome://extensions/
-# 2. Enable Developer mode
-# 3. Click "Load unpacked"
-# 4. Select the gaze folder
-```
-
 ### File Structure
 
 - `manifest.json` - Extension configuration
@@ -215,19 +176,6 @@ node convert_icons.js
 
 - Built with [WebGazer.js](https://webgazer.cs.brown.edu/)
 - Icons created with SVG and Sharp
-- Inspired by research in eye tracking and accessibility
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues or pull requests.
-
----
-
-**Note**: This is an MVP (Minimum Viable Product) release. Features and improvements will be added based on user feedback.
 
 ## Version History
 
