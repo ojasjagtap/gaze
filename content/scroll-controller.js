@@ -4,12 +4,12 @@
  */
 
 // Default settings constants
-const DEFAULT_MAX_SCROLL_SPEED = 800; // px/s - maximum downward scroll speed
-const DEFAULT_MAX_UPWARD_SPEED = 400; // px/s - maximum upward scroll speed
-const DEFAULT_SENSITIVITY = 50; // 0-100 - overall sensitivity
-const DEFAULT_UPPER_ZONE_THRESHOLD = 0.30; // normalized Y position for upper zone
-const DEFAULT_LOWER_ZONE_THRESHOLD = 0.70; // normalized Y position for lower zone
-const DEFAULT_CONFIDENCE_THRESHOLD = 0.6; // minimum confidence for scrolling
+const SCROLL_DEFAULT_MAX_SCROLL_SPEED = 800; // px/s - maximum downward scroll speed
+const SCROLL_DEFAULT_MAX_UPWARD_SPEED = 400; // px/s - maximum upward scroll speed
+const SCROLL_DEFAULT_SENSITIVITY = 50; // 0-100 - overall sensitivity
+const SCROLL_DEFAULT_UPPER_ZONE_THRESHOLD = 0.30; // normalized Y position for upper zone
+const SCROLL_DEFAULT_LOWER_ZONE_THRESHOLD = 0.70; // normalized Y position for lower zone
+const SCROLL_DEFAULT_CONFIDENCE_THRESHOLD = 0.6; // minimum confidence for scrolling
 
 // Scroll control constants
 const VELOCITY_SMOOTHING_FACTOR = 0.15; // EMA smoothing factor (0-1)
@@ -35,12 +35,12 @@ class ScrollController {
    */
   constructor(options = {}) {
     this.settings = {
-      maxScrollSpeed: options.maxScrollSpeed || DEFAULT_MAX_SCROLL_SPEED,
-      maxUpwardSpeed: options.maxUpwardSpeed || DEFAULT_MAX_UPWARD_SPEED,
-      sensitivity: options.sensitivity || DEFAULT_SENSITIVITY,
-      upperZoneThreshold: options.upperZoneThreshold || DEFAULT_UPPER_ZONE_THRESHOLD,
-      lowerZoneThreshold: options.lowerZoneThreshold || DEFAULT_LOWER_ZONE_THRESHOLD,
-      confidenceThreshold: options.confidenceThreshold || DEFAULT_CONFIDENCE_THRESHOLD
+      maxScrollSpeed: options.maxScrollSpeed || SCROLL_DEFAULT_MAX_SCROLL_SPEED,
+      maxUpwardSpeed: options.maxUpwardSpeed || SCROLL_DEFAULT_MAX_UPWARD_SPEED,
+      sensitivity: options.sensitivity || SCROLL_DEFAULT_SENSITIVITY,
+      upperZoneThreshold: options.upperZoneThreshold || SCROLL_DEFAULT_UPPER_ZONE_THRESHOLD,
+      lowerZoneThreshold: options.lowerZoneThreshold || SCROLL_DEFAULT_LOWER_ZONE_THRESHOLD,
+      confidenceThreshold: options.confidenceThreshold || SCROLL_DEFAULT_CONFIDENCE_THRESHOLD
     };
 
     this.currentVelocity = 0;

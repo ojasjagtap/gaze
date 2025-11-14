@@ -4,15 +4,15 @@
  */
 
 // Constants
-const TARGET_FRAME_RATE = 25; // Hz - target frame rate for gaze estimation
-const VIDEO_VIEWER_WIDTH = 320; // px - WebGazer video width
-const VIDEO_VIEWER_HEIGHT = 240; // px - WebGazer video height
-const DEFAULT_CALIBRATION_DURATION = 700; // ms - default duration for calibration point
-const CONFIDENCE_OUT_OF_BOUNDS = 0.3; // confidence when prediction is out of viewport
-const CONFIDENCE_AT_EDGES = 0.6; // confidence when prediction is at viewport edges
-const CONFIDENCE_IN_VIEWPORT = 0.85; // confidence when prediction is in main viewport
-const EDGE_MARGIN = 50; // px - margin from viewport edges for confidence calculation
-const LOG_PREFIX = '[Gaze]';
+const GAZE_TARGET_FRAME_RATE = 25; // Hz - target frame rate for gaze estimation
+const GAZE_VIDEO_VIEWER_WIDTH = 320; // px - WebGazer video width
+const GAZE_VIDEO_VIEWER_HEIGHT = 240; // px - WebGazer video height
+const GAZE_DEFAULT_CALIBRATION_DURATION = 700; // ms - default duration for calibration point
+const GAZE_CONFIDENCE_OUT_OF_BOUNDS = 0.3; // confidence when prediction is out of viewport
+const GAZE_CONFIDENCE_AT_EDGES = 0.6; // confidence when prediction is at viewport edges
+const GAZE_CONFIDENCE_IN_VIEWPORT = 0.85; // confidence when prediction is in main viewport
+const GAZE_EDGE_MARGIN = 50; // px - margin from viewport edges for confidence calculation
+const GAZE_LOG_PREFIX = '[Gaze]';
 
 /**
  * Wrapper for WebGazer.js providing gaze estimation with confidence tracking
@@ -24,7 +24,7 @@ class GazeEstimator {
     this.callbacks = [];
     this.lastPrediction = null;
     this.calibrationData = null;
-    this.targetFrameRate = TARGET_FRAME_RATE;
+    this.targetFrameRate = GAZE_TARGET_FRAME_RATE;
   }
 
   /**
@@ -55,13 +55,13 @@ class GazeEstimator {
         webgazer.setTracker('TFFacemesh');
 
         // Set frame rate
-        webgazer.params.videoViewerWidth = VIDEO_VIEWER_WIDTH;
-        webgazer.params.videoViewerHeight = VIDEO_VIEWER_HEIGHT;
+        webgazer.params.videoViewerWidth = GAZE_VIDEO_VIEWER_WIDTH;
+        webgazer.params.videoViewerHeight = GAZE_VIDEO_VIEWER_HEIGHT;
 
         this.isInitialized = true;
         resolve();
       } catch (error) {
-        console.error(LOG_PREFIX, 'Failed to initialize WebGazer:', error);
+        console.error(GAZE_LOG_PREFIX, 'Failed to initialize WebGazer:', error);
         reject(error);
       }
     });
@@ -82,7 +82,7 @@ class GazeEstimator {
           resolve();
         })
         .catch((error) => {
-          console.error(LOG_PREFIX, 'Camera access denied:', error);
+          console.error(GAZE_LOG_PREFIX, 'Camera access denied:', error);
           reject(new Error('Camera access denied. Please grant camera permission to use gaze tracking.'));
         });
     });
@@ -191,17 +191,17 @@ class GazeEstimator {
 
     // Check if prediction is within viewport
     if (data.x < 0 || data.x > viewportWidth || data.y < 0 || data.y > viewportHeight) {
-      return CONFIDENCE_OUT_OF_BOUNDS;
+      return GAZE_CONFIDENCE_OUT_OF_BOUNDS;
     }
 
     // Check if at extreme edges (might be unstable)
-    if (data.x < EDGE_MARGIN || data.x > viewportWidth - EDGE_MARGIN ||
-        data.y < EDGE_MARGIN || data.y > viewportHeight - EDGE_MARGIN) {
-      return CONFIDENCE_AT_EDGES;
+    if (data.x < GAZE_EDGE_MARGIN || data.x > viewportWidth - GAZE_EDGE_MARGIN ||
+        data.y < GAZE_EDGE_MARGIN || data.y > viewportHeight - GAZE_EDGE_MARGIN) {
+      return GAZE_CONFIDENCE_AT_EDGES;
     }
 
     // In main viewport area
-    return CONFIDENCE_IN_VIEWPORT;
+    return GAZE_CONFIDENCE_IN_VIEWPORT;
   }
 
   /**
@@ -223,7 +223,7 @@ class GazeEstimator {
    * @param {number} duration - Duration in ms to collect samples
    * @returns {Promise<Array>} Array of collected calibration points
    */
-  async addCalibrationPoint(x, y, duration = DEFAULT_CALIBRATION_DURATION) {
+  async addCalibrationPoint(x, y, duration = GAZE_DEFAULT_CALIBRATION_DURATION) {
     return new Promise((resolve) => {
       const points = [];
       const startTime = Date.now();
@@ -262,7 +262,7 @@ class GazeEstimator {
       this.calibrationData = data;
       return true;
     } catch (error) {
-      console.error(LOG_PREFIX, 'Failed to save calibration:', error);
+      console.error(GAZE_LOG_PREFIX, 'Failed to save calibration:', error);
       return false;
     }
   }
@@ -276,7 +276,7 @@ class GazeEstimator {
       const result = await chrome.storage.local.get('calibrationData');
       return result.calibrationData || null;
     } catch (error) {
-      console.error(LOG_PREFIX, 'Failed to load calibration:', error);
+      console.error(GAZE_LOG_PREFIX, 'Failed to load calibration:', error);
       return null;
     }
   }

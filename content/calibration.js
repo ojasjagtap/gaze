@@ -4,28 +4,28 @@
  */
 
 // Constants
-const DEFAULT_NUM_CALIBRATION_POINTS = 9; // number of calibration points
-const CALIBRATION_MARGIN = 0.15; // 15% margin from edges for calibration points
-const CAMERA_PERMISSION_DELAY = 1000; // ms - wait for permission dialog to close
-const CAMERA_INIT_DELAY = 500; // ms - wait for camera to initialize
-const TARGET_APPEAR_DELAY = 800; // ms - delay before starting calibration for each point
-const BETWEEN_POINTS_DELAY = 400; // ms - pause between calibration points
-const COMPLETION_MESSAGE_DELAY = 1500; // ms - how long to show completion message
-const LOG_PREFIX = '[Gaze]';
+const CAL_DEFAULT_NUM_CALIBRATION_POINTS = 9; // number of calibration points
+const CAL_CALIBRATION_MARGIN = 0.15; // 15% margin from edges for calibration points
+const CAL_CAMERA_PERMISSION_DELAY = 1000; // ms - wait for permission dialog to close
+const CAL_CAMERA_INIT_DELAY = 500; // ms - wait for camera to initialize
+const CAL_TARGET_APPEAR_DELAY = 800; // ms - delay before starting calibration for each point
+const CAL_BETWEEN_POINTS_DELAY = 400; // ms - pause between calibration points
+const CAL_COMPLETION_MESSAGE_DELAY = 1500; // ms - how long to show completion message
+const CAL_LOG_PREFIX = '[Gaze]';
 
 // Calibration data collection constants
-const MAX_CALIBRATION_DURATION = 3000; // ms - maximum time per calibration point
-const REQUIRED_GAZE_DURATION = 700; // ms - required duration of looking at target
-const GAZE_RADIUS = 150; // px - how close gaze must be to target
-const MIN_CONFIDENCE_FOR_CALIBRATION = 0.5; // minimum confidence for calibration sample
-const CALIBRATION_SAMPLE_INTERVAL = 100; // ms - how often to sample during calibration
+const CAL_MAX_CALIBRATION_DURATION = 3000; // ms - maximum time per calibration point
+const CAL_REQUIRED_GAZE_DURATION = 700; // ms - required duration of looking at target
+const CAL_GAZE_RADIUS = 150; // px - how close gaze must be to target
+const CAL_MIN_CONFIDENCE = 0.5; // minimum confidence for calibration sample
+const CAL_SAMPLE_INTERVAL = 100; // ms - how often to sample during calibration
 
 // Visual feedback constants
-const TARGET_SCALE_NORMAL = 1.0; // normal target scale
-const TARGET_SCALE_FOCUSED = 1.1; // target scale when user is looking at it
-const TARGET_SIZE = 60; // px - calibration target size
-const PROGRESS_RING_RADIUS = 28; // px - radius of progress ring
-const CENTER_POSITION = 0.5; // normalized position for center point
+const CAL_TARGET_SCALE_NORMAL = 1.0; // normal target scale
+const CAL_TARGET_SCALE_FOCUSED = 1.1; // target scale when user is looking at it
+const CAL_TARGET_SIZE = 60; // px - calibration target size
+const CAL_PROGRESS_RING_RADIUS = 28; // px - radius of progress ring
+const CAL_CENTER_POSITION = 0.5; // normalized position for center point
 
 /**
  * Manages the calibration process for gaze tracking
@@ -44,7 +44,7 @@ class CalibrationManager {
    * @param {number} numPoints - Number of calibration points (5 or 9)
    * @throws {Error} If camera access is denied
    */
-  async start(numPoints = DEFAULT_NUM_CALIBRATION_POINTS) {
+  async start(numPoints = CAL_DEFAULT_NUM_CALIBRATION_POINTS) {
     if (this.isCalibrating) return;
 
     this.isCalibrating = true;
@@ -62,7 +62,7 @@ class CalibrationManager {
       await window.gazeEstimator.requestCameraAccess();
 
       // Camera access granted - wait for permission dialog to close
-      await this.delay(CAMERA_PERMISSION_DELAY);
+      await this.delay(CAL_CAMERA_PERMISSION_DELAY);
 
       // Create overlay UI after camera permission is granted
       this.createOverlay();
@@ -71,13 +71,13 @@ class CalibrationManager {
       await window.gazeEstimator.start();
 
       // Wait a moment for camera to initialize
-      await this.delay(CAMERA_INIT_DELAY);
+      await this.delay(CAL_CAMERA_INIT_DELAY);
 
       // Start calibration sequence
       await this.runCalibrationSequence();
     } catch (error) {
       // Camera access denied or error occurred
-      console.error(LOG_PREFIX, 'Camera access error:', error);
+      console.error(CAL_LOG_PREFIX, 'Camera access error:', error);
       this.isCalibrating = false;
       this.removeOverlay();
 
@@ -102,24 +102,24 @@ class CalibrationManager {
     if (numPoints === 5) {
       // 5-point: corners + center
       points.push(
-        { x: CALIBRATION_MARGIN, y: CALIBRATION_MARGIN }, // Top-left
-        { x: 1 - CALIBRATION_MARGIN, y: CALIBRATION_MARGIN }, // Top-right
-        { x: CENTER_POSITION, y: CENTER_POSITION }, // Center
-        { x: CALIBRATION_MARGIN, y: 1 - CALIBRATION_MARGIN }, // Bottom-left
-        { x: 1 - CALIBRATION_MARGIN, y: 1 - CALIBRATION_MARGIN } // Bottom-right
+        { x: CAL_CALIBRATION_MARGIN, y: CAL_CALIBRATION_MARGIN }, // Top-left
+        { x: 1 - CAL_CALIBRATION_MARGIN, y: CAL_CALIBRATION_MARGIN }, // Top-right
+        { x: CAL_CENTER_POSITION, y: CAL_CENTER_POSITION }, // Center
+        { x: CAL_CALIBRATION_MARGIN, y: 1 - CAL_CALIBRATION_MARGIN }, // Bottom-left
+        { x: 1 - CAL_CALIBRATION_MARGIN, y: 1 - CAL_CALIBRATION_MARGIN } // Bottom-right
       );
     } else if (numPoints === 9) {
       // 9-point: corners, edges, center
       points.push(
-        { x: CALIBRATION_MARGIN, y: CALIBRATION_MARGIN }, // Top-left
-        { x: CENTER_POSITION, y: CALIBRATION_MARGIN }, // Top-center
-        { x: 1 - CALIBRATION_MARGIN, y: CALIBRATION_MARGIN }, // Top-right
-        { x: CALIBRATION_MARGIN, y: CENTER_POSITION }, // Middle-left
-        { x: CENTER_POSITION, y: CENTER_POSITION }, // Center
-        { x: 1 - CALIBRATION_MARGIN, y: CENTER_POSITION }, // Middle-right
-        { x: CALIBRATION_MARGIN, y: 1 - CALIBRATION_MARGIN }, // Bottom-left
-        { x: CENTER_POSITION, y: 1 - CALIBRATION_MARGIN }, // Bottom-center
-        { x: 1 - CALIBRATION_MARGIN, y: 1 - CALIBRATION_MARGIN } // Bottom-right
+        { x: CAL_CALIBRATION_MARGIN, y: CAL_CALIBRATION_MARGIN }, // Top-left
+        { x: CAL_CENTER_POSITION, y: CAL_CALIBRATION_MARGIN }, // Top-center
+        { x: 1 - CAL_CALIBRATION_MARGIN, y: CAL_CALIBRATION_MARGIN }, // Top-right
+        { x: CAL_CALIBRATION_MARGIN, y: CAL_CENTER_POSITION }, // Middle-left
+        { x: CAL_CENTER_POSITION, y: CAL_CENTER_POSITION }, // Center
+        { x: 1 - CAL_CALIBRATION_MARGIN, y: CAL_CENTER_POSITION }, // Middle-right
+        { x: CAL_CALIBRATION_MARGIN, y: 1 - CAL_CALIBRATION_MARGIN }, // Bottom-left
+        { x: CAL_CENTER_POSITION, y: 1 - CAL_CALIBRATION_MARGIN }, // Bottom-center
+        { x: 1 - CAL_CALIBRATION_MARGIN, y: 1 - CAL_CALIBRATION_MARGIN } // Bottom-right
       );
     }
 
@@ -149,8 +149,8 @@ class CalibrationManager {
           <div class="target-crosshair-h"></div>
           <div class="target-crosshair-v"></div>
           <div class="target-center"></div>
-          <svg class="target-progress" width="${TARGET_SIZE}" height="${TARGET_SIZE}">
-            <circle class="progress-ring" cx="${TARGET_SIZE / 2}" cy="${TARGET_SIZE / 2}" r="${PROGRESS_RING_RADIUS}" />
+          <svg class="target-progress" width="${CAL_TARGET_SIZE}" height="${CAL_TARGET_SIZE}">
+            <circle class="progress-ring" cx="${CAL_TARGET_SIZE / 2}" cy="${CAL_TARGET_SIZE / 2}" r="${CAL_PROGRESS_RING_RADIUS}" />
           </svg>
         </div>
       </div>
@@ -178,13 +178,13 @@ class CalibrationManager {
       this.showTarget(x, y);
 
       // Wait a moment for user to look at target
-      await this.delay(TARGET_APPEAR_DELAY);
+      await this.delay(CAL_TARGET_APPEAR_DELAY);
 
       // Collect calibration data
       await this.collectCalibrationData(x, y);
 
       // Brief pause between points
-      await this.delay(BETWEEN_POINTS_DELAY);
+      await this.delay(CAL_BETWEEN_POINTS_DELAY);
     }
 
     // Calibration complete
@@ -199,6 +199,10 @@ class CalibrationManager {
    */
   async collectCalibrationData(x, y) {
     const target = document.getElementById('calibration-target');
+
+    // Check if this is initial calibration or recalibration
+    // During initial calibration, WebGazer has no training data yet
+    const hasExistingCalibration = window.gazeEstimator.calibrationData !== null;
 
     return new Promise((resolve) => {
       const startTime = Date.now();
@@ -222,45 +226,57 @@ class CalibrationManager {
         // Get current gaze prediction
         const gazePrediction = window.gazeEstimator.getLastPrediction();
 
-        // Check if user is looking at the target
+        // During initial calibration, always accumulate time (no gaze verification)
+        // During recalibration, verify user is looking at target
         let isLookingAtTarget = false;
-        if (gazePrediction && gazePrediction.confidence > MIN_CONFIDENCE_FOR_CALIBRATION) {
+
+        if (hasExistingCalibration && gazePrediction && gazePrediction.confidence > CAL_MIN_CONFIDENCE) {
+          // Recalibration: check if user is looking at the target
           const dx = gazePrediction.x - x;
           const dy = gazePrediction.y - y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          isLookingAtTarget = distance < GAZE_RADIUS;
+          isLookingAtTarget = distance < CAL_GAZE_RADIUS;
+        } else if (!hasExistingCalibration) {
+          // Initial calibration: always consider user as looking (no verification possible yet)
+          isLookingAtTarget = true;
         }
 
-        // Only accumulate time if looking at target
+        // Accumulate time
         if (isLookingAtTarget) {
           accumulatedGazeTime += frameDelta;
         }
 
         // Calculate progress based on accumulated gaze time
-        const progress = Math.min(accumulatedGazeTime / REQUIRED_GAZE_DURATION, 1);
+        const progress = Math.min(accumulatedGazeTime / CAL_REQUIRED_GAZE_DURATION, 1);
 
         // Update progress ring
         const circle = target.querySelector('.progress-ring');
-        const circumference = 2 * Math.PI * PROGRESS_RING_RADIUS;
+        const circumference = 2 * Math.PI * CAL_PROGRESS_RING_RADIUS;
         const offset = circumference * (1 - progress);
         circle.style.strokeDashoffset = offset;
 
-        // Add visual feedback when looking at target
-        if (isLookingAtTarget) {
-          target.style.transform = `translate(-50%, -50%) scale(${TARGET_SCALE_FOCUSED})`;
+        // Add visual feedback when looking at target (only during recalibration)
+        if (hasExistingCalibration) {
+          if (isLookingAtTarget) {
+            target.style.transform = `translate(-50%, -50%) scale(${CAL_TARGET_SCALE_FOCUSED})`;
+          } else {
+            target.style.transform = `translate(-50%, -50%) scale(${CAL_TARGET_SCALE_NORMAL})`;
+          }
         } else {
-          target.style.transform = `translate(-50%, -50%) scale(${TARGET_SCALE_NORMAL})`;
+          // During initial calibration, just pulse to show it's active
+          const pulseScale = 1.0 + Math.sin(totalElapsed / 200) * 0.05;
+          target.style.transform = `translate(-50%, -50%) scale(${pulseScale})`;
         }
 
         // Check if complete or timed out
         if (progress >= 1) {
-          target.style.transform = `translate(-50%, -50%) scale(${TARGET_SCALE_NORMAL})`;
+          target.style.transform = `translate(-50%, -50%) scale(${CAL_TARGET_SCALE_NORMAL})`;
           cleanup();
           resolve();
-        } else if (totalElapsed > MAX_CALIBRATION_DURATION) {
+        } else if (totalElapsed > CAL_MAX_CALIBRATION_DURATION) {
           // Timeout - still resolve but with less data
-          console.warn(LOG_PREFIX, 'Calibration', 'Target timeout - user may not have looked at target');
-          target.style.transform = `translate(-50%, -50%) scale(${TARGET_SCALE_NORMAL})`;
+          console.warn(CAL_LOG_PREFIX, 'Calibration', 'Target timeout - user may not have looked at target');
+          target.style.transform = `translate(-50%, -50%) scale(${CAL_TARGET_SCALE_NORMAL})`;
           cleanup();
           resolve();
         } else {
@@ -269,20 +285,25 @@ class CalibrationManager {
       };
 
       // Start recording calibration samples in WebGazer
-      // We'll collect samples throughout, but only count progress when user looks at target
+      // Record continuously during initial calibration, selectively during recalibration
       sampleInterval = setInterval(() => {
-        const gazePrediction = window.gazeEstimator.getLastPrediction();
-        if (gazePrediction && gazePrediction.confidence > MIN_CONFIDENCE_FOR_CALIBRATION) {
-          const dx = gazePrediction.x - x;
-          const dy = gazePrediction.y - y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+        if (!hasExistingCalibration) {
+          // Initial calibration: always record (user is assumed to be looking)
+          webgazer.recordScreenPosition(x, y, 'click');
+        } else {
+          // Recalibration: only record when user is actually looking at target
+          const gazePrediction = window.gazeEstimator.getLastPrediction();
+          if (gazePrediction && gazePrediction.confidence > CAL_MIN_CONFIDENCE) {
+            const dx = gazePrediction.x - x;
+            const dy = gazePrediction.y - y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-          // Only record when user is actually looking at target
-          if (distance < GAZE_RADIUS) {
-            webgazer.recordScreenPosition(x, y, 'click');
+            if (distance < CAL_GAZE_RADIUS) {
+              webgazer.recordScreenPosition(x, y, 'click');
+            }
           }
         }
-      }, CALIBRATION_SAMPLE_INTERVAL);
+      }, CAL_SAMPLE_INTERVAL);
 
       animate();
     });
@@ -301,7 +322,7 @@ class CalibrationManager {
 
     // Reset progress ring
     const circle = target.querySelector('.progress-ring');
-    const circumference = 2 * Math.PI * PROGRESS_RING_RADIUS;
+    const circumference = 2 * Math.PI * CAL_PROGRESS_RING_RADIUS;
     circle.style.strokeDasharray = `${circumference} ${circumference}`;
     circle.style.strokeDashoffset = circumference;
   }
@@ -339,7 +360,7 @@ class CalibrationManager {
       </div>
     `;
 
-    await this.delay(COMPLETION_MESSAGE_DELAY);
+    await this.delay(CAL_COMPLETION_MESSAGE_DELAY);
 
     // Remove overlay
     this.removeOverlay();

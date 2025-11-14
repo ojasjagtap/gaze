@@ -4,10 +4,10 @@
  */
 
 // Constants
-const DEFAULT_WINDOW_SIZE = 250; // ms - time window for fixation detection
-const DEFAULT_DISPERSION_THRESHOLD = 50; // px - maximum dispersion for fixation
-const DEFAULT_CONFIDENCE_THRESHOLD = 0.6; // minimum confidence for valid fixation
-const MIN_SAMPLES_FOR_FIXATION = 3; // minimum number of samples required
+const FIXATION_DEFAULT_WINDOW_SIZE = 250; // ms - time window for fixation detection
+const FIXATION_DEFAULT_DISPERSION_THRESHOLD = 50; // px - maximum dispersion for fixation
+const FIXATION_DEFAULT_CONFIDENCE_THRESHOLD = 0.6; // minimum confidence for valid fixation
+const FIXATION_MIN_SAMPLES = 3; // minimum number of samples required
 
 /**
  * Detects when user is fixating on a specific point
@@ -21,9 +21,9 @@ class FixationDetector {
    * @param {number} options.confidenceThreshold - Minimum confidence threshold
    */
   constructor(options = {}) {
-    this.windowSize = options.windowSize || DEFAULT_WINDOW_SIZE;
-    this.dispersionThreshold = options.dispersionThreshold || DEFAULT_DISPERSION_THRESHOLD;
-    this.confidenceThreshold = options.confidenceThreshold || DEFAULT_CONFIDENCE_THRESHOLD;
+    this.windowSize = options.windowSize || FIXATION_DEFAULT_WINDOW_SIZE;
+    this.dispersionThreshold = options.dispersionThreshold || FIXATION_DEFAULT_DISPERSION_THRESHOLD;
+    this.confidenceThreshold = options.confidenceThreshold || FIXATION_DEFAULT_CONFIDENCE_THRESHOLD;
 
     this.gazeBuffer = [];
     this.currentFixation = null;
@@ -53,7 +53,7 @@ class FixationDetector {
     );
 
     // Check if we have enough samples and confidence
-    if (this.gazeBuffer.length < MIN_SAMPLES_FOR_FIXATION) {
+    if (this.gazeBuffer.length < FIXATION_MIN_SAMPLES) {
       this.isFixating = false;
       this.currentFixation = null;
       return { isFixating: false };
