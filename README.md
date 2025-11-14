@@ -1,4 +1,4 @@
-# Gaze - Hands-Free Scrolling Chrome Extension
+# Gaze
 
 Gaze is a Chrome extension that enables hands-free scrolling based on eye tracking. Simply look at the bottom of the page to scroll down, or the top to scroll up.
 
@@ -37,10 +37,6 @@ Click the extension icon to open detailed settings:
 - **Recalibrate**: Run calibration again
 - **Reset Calibration**: Clear calibration data
 - **Reset Settings**: Restore default settings
-
-### Keyboard Shortcuts
-
-- `Ctrl+Shift+G`: Toggle debug stats panel (shows frame rate, velocity, confidence, fixation status)
 
 ### Tips for Best Results
 
